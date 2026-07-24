@@ -65,7 +65,7 @@ export default function RoomCard() {
         {/* Header - Integrating the accurate Butterfly Logo */}
         <div className="flex items-center gap-4 mb-6">
           {/* Top Left Header Logo Block Container */}
-          <div className="flex-shrink-0 shadow-lg shadow-orange-500/20 rounded-xl overflow-hidden">
+          <div className="flex-shrink-0 shadow-lg shadow-orange-500/30 rounded-xl overflow-hidden">
             {/* ADJUSTABLE: Change 'w-14 h-14' to scale the Top Left Header Logo */}
             <Logo className="w-14 h-14" />
           </div>
