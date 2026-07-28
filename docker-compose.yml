@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Your Next.js client
+  client:
+    build: ./client
+    image: node:18-alpine
+    ports:
+      - "3000:3000"
+
+  # Your Server
+  server:
+    build: ./server
+    image: node:18-alpine
+    ports:
+      - "4000:4000"
+
+  # Your Worker Service (If this uses Python)
+  worker:
+    build: ./worker-service
+    image: python:3.9-slim
+
+  # If you need GCC or OpenJDK, add them as separate services:
+  # compilation-tool:
+  #   image: gcc:11
+  # java-service:
+  #   image: openjdk:11
