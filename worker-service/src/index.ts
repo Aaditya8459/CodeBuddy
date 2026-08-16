@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { runCode } from './executor.ts';
+import { runCode } from './executor.js';
 
 const app = express();
 app.use(cors());
