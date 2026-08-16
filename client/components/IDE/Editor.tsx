@@ -2,8 +2,15 @@
 
 import { useRef, useCallback, useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
-import { editor } from "monaco-editor";
-import { Play, Copy, Check, Settings, Zap, Loader2 } from "lucide-react";
+import type { editor } from "monaco-editor";
+import {
+  Play,
+  Copy,
+  Check,
+  Settings,
+  Zap,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -25,20 +32,29 @@ export default function EditorPanel({
   isRunning,
 }: EditorPanelProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
-  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
+
+  const [cursorPos, setCursorPos] = useState({
+    line: 1,
+    col: 1,
+  });
+
   const [isFocused, setIsFocused] = useState(false);
   const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 50);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    setCharCount(value?.length || 0);
+    setCharCount(value?.length ?? 0);
   }, [value]);
 
   const handleEditorDidMount = useCallback(
@@ -46,28 +62,62 @@ export default function EditorPanel({
       editorRef.current = editorInstance;
       setEditorReady(true);
 
-      editorInstance.onDidChangeCursorPosition((e) => {
-        setCursorPos({ line: e.position.lineNumber, col: e.position.column });
-      });
+      const cursorDisposable =
+        editorInstance.onDidChangeCursorPosition((event) => {
+          setCursorPos({
+            line: event.position.lineNumber,
+            col: event.position.column,
+          });
+        });
 
-      editorInstance.onDidFocusEditorText(() => setIsFocused(true));
-      editorInstance.onDidBlurEditorText(() => setIsFocused(false));
+      const focusDisposable =
+        editorInstance.onDidFocusEditorText(() => {
+          setIsFocused(true);
+        });
+
+      const blurDisposable =
+        editorInstance.onDidBlurEditorText(() => {
+          setIsFocused(false);
+        });
+
+      return () => {
+        cursorDisposable.dispose();
+        focusDisposable.dispose();
+        blurDisposable.dispose();
+      };
     },
     []
   );
 
-  const handleCopy = () => {
-    const code = editorRef.current?.getValue() || "";
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const code = editorRef.current?.getValue() ?? "";
+
+    try {
+      await navigator.clipboard.writeText(code);
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   const handleRunClick = () => {
-    onRun(editorRef.current?.getValue() || "");
+    const code = editorRef.current?.getValue() ?? "";
+
+    if (!code.trim()) {
+      return;
+    }
+
+    onRun(code);
   };
 
   const getLanguageColor = (lang: string) => {
+    const normalizedLanguage = (lang || "typescript").toLowerCase();
+
     const colors: Record<string, string> = {
       typescript: "#3178c6",
       javascript: "#f0db4f",
@@ -75,181 +125,374 @@ export default function EditorPanel({
       json: "#f0db4f",
       markdown: "#38bdf8",
       html: "#e44d26",
+      xml: "#e44d26",
       css: "#264de4",
+      scss: "#c6538c",
+      jsx: "#61dafb",
+      tsx: "#3178c6",
     };
-    return colors[lang] || "#a1a1aa";
+
+    return colors[normalizedLanguage] ?? "#a1a1aa";
   };
 
-  const langColor = getLanguageColor(language);
+  const normalizedLanguage = (
+    language || "typescript"
+  ).toLowerCase();
+
+  const langColor = getLanguageColor(normalizedLanguage);
 
   return (
     <div
       className={`
-        flex flex-col h-full bg-[#0f0f0f] overflow-hidden relative
+        relative flex h-full w-full flex-col
+        overflow-hidden bg-[#0f0f0f]
         transition-all duration-700 ease-out
-        ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}
+        ${
+          mounted
+            ? "translate-y-0 opacity-100"
+            : "translate-y-3 opacity-0"
+        }
       `}
     >
-      {/* Ambient edge glow */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#fa8c00]/20 to-transparent pointer-events-none z-20" />
+      {/* Ambient top glow */}
+      <div
+        className="
+          pointer-events-none absolute
+          left-0 right-0 top-0 z-20 h-px
+          bg-gradient-to-r
+          from-transparent
+          via-[#fa8c00]/20
+          to-transparent
+        "
+      />
+
+      {/* Focus glow */}
       <div
         className={`
-          absolute inset-0 pointer-events-none z-10 transition-opacity duration-500
+          pointer-events-none absolute inset-0 z-10
+          transition-opacity duration-500
           ${isFocused ? "opacity-100" : "opacity-0"}
         `}
       >
-        <div className="absolute inset-0 shadow-[inset_0_0_60px_-20px_rgba(240,70,0,0.08)]" />
+        <div
+          className="
+            absolute inset-0
+            shadow-[inset_0_0_60px_-20px_rgba(240,70,0,0.08)]
+          "
+        />
       </div>
 
-      {/* ═══════ Header Bar ═══════ */}
+      {/* =========================================================
+          HEADER
+      ========================================================= */}
+
       <div
         className={`
-          relative flex items-center justify-between px-4 py-2.5 
-          border-b border-[#27272a]/80 bg-[#111111]/95 backdrop-blur-sm
+          relative flex items-center justify-between
+          border-b border-[#27272a]/80
+          bg-[#111111]/95
+          px-4 py-2.5
+          backdrop-blur-sm
           transition-all duration-500
-          ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
+          ${
+            mounted
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-2 opacity-0"
+          }
         `}
         style={{ transitionDelay: "100ms" }}
       >
-        {/* Left: File Info */}
-        <div className="flex items-center gap-3">
-          {/* Language Badge */}
+        {/* File Information */}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Language */}
           <Badge
             variant="outline"
             className="
-              border-[#27272a] text-[#a1a1aa] text-xs font-mono 
-              hover:border-[#fa8c00]/40 hover:bg-[#fa8c00]/5
-              transition-all duration-300 cursor-default
-              relative overflow-hidden group/badge
+              relative overflow-hidden
+              border-[#27272a]
+              text-xs font-mono
+              text-[#a1a1aa]
+              transition-all duration-300
+              hover:border-[#fa8c00]/40
+              hover:bg-[#fa8c00]/5
             "
           >
             <span
-              className="w-2 h-2 rounded-full mr-1.5 transition-all duration-300 group-hover/badge:scale-125 group-hover/badge:shadow-[0_0_6px_currentColor]"
-              style={{ backgroundColor: langColor, color: langColor }}
+              className="
+                mr-1.5 h-2 w-2 rounded-full
+                transition-all duration-300
+              "
+              style={{
+                backgroundColor: langColor,
+                boxShadow: "0 0 0 transparent",
+              }}
             />
-            <span className="relative z-10">{language}</span>
+
+            <span className="relative z-10">
+              {normalizedLanguage}
+            </span>
           </Badge>
 
           {/* Filename */}
-          <span className="text-sm text-[#a1a1aa] font-mono tracking-tight">
+          <span
+            className="
+              max-w-[240px] truncate
+              font-mono text-sm
+              tracking-tight
+              text-[#a1a1aa]
+            "
+            title={fileName}
+          >
             {fileName}
           </span>
 
-          {/* Cursor Position */}
+          {/* Cursor */}
           <span
             className={`
-              text-[10px] text-[#52525b] font-mono hidden sm:inline-block
+              hidden
+              font-mono text-[10px]
+              text-[#52525b]
               transition-opacity duration-300
-              ${editorReady ? "opacity-100" : "opacity-0"}
+              sm:inline-block
+              ${
+                editorReady
+                  ? "opacity-100"
+                  : "opacity-0"
+              }
             `}
           >
             Ln {cursorPos.line}, Col {cursorPos.col}
           </span>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          {/* Copy Button */}
+        {/* Actions */}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Copy */}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleCopy}
             className={`
-              h-8 px-3 text-xs text-[#a1a1aa] hover:text-white 
-              hover:bg-[#27272a]/80 border border-transparent hover:border-[#3f3f46]/50
-              transition-all duration-200 active:scale-95
+              h-8 px-3 text-xs
+              text-[#a1a1aa]
+              hover:border-[#3f3f46]/50
+              hover:bg-[#27272a]/80
+              hover:text-white
+              active:scale-95
+              transition-all duration-200
               ${copied ? "text-[#22c55e]" : ""}
             `}
           >
-            <span className="relative flex items-center">
-              {copied ? (
-                <Check className="w-3.5 h-3.5 mr-1.5 animate-bounce" />
-              ) : (
-                <Copy className="w-3.5 h-3.5 mr-1.5 transition-transform duration-200 group-hover:scale-110" />
-              )}
-              <span className="transition-all duration-200">
-                {copied ? "Copied" : "Copy"}
-              </span>
-            </span>
+            {copied ? (
+              <Check className="mr-1.5 h-3.5 w-3.5" />
+            ) : (
+              <Copy className="mr-1.5 h-3.5 w-3.5" />
+            )}
+
+            {copied ? "Copied" : "Copy"}
           </Button>
 
-          {/* Settings Button */}
+          {/* Settings */}
           <Button
             variant="ghost"
             size="sm"
             className="
-              h-8 w-8 p-0 text-[#a1a1aa] hover:text-white hover:bg-[#27272a]/80
-              border border-transparent hover:border-[#3f3f46]/50
-              transition-all duration-200 active:scale-95
               group/settings
+              h-8 w-8
+              border border-transparent
+              p-0
+              text-[#a1a1aa]
+              transition-all duration-200
+              hover:border-[#3f3f46]/50
+              hover:bg-[#27272a]/80
+              hover:text-white
+              active:scale-95
             "
+            title="Editor settings"
           >
-            <Settings className="w-3.5 h-3.5 transition-transform duration-500 group-hover/settings:rotate-90" />
+            <Settings
+              className="
+                h-3.5 w-3.5
+                transition-transform duration-500
+                group-hover/settings:rotate-90
+              "
+            />
           </Button>
 
-          {/* Run Button */}
+          {/* Run */}
           <Button
             onClick={handleRunClick}
-            disabled={isRunning}
+            disabled={isRunning || !editorReady}
             size="sm"
-            className={`
-              relative h-8 px-4 text-xs font-semibold text-white overflow-hidden
-              bg-gradient-to-r from-[#f04600] to-[#fa8c00]
-              hover:from-[#d93d00] hover:to-[#e67d00]
-              shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40
-              disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none
-              active:scale-95 transition-all duration-200
+            className="
               group/run
-            `}
+              relative h-8
+              overflow-hidden
+              bg-gradient-to-r
+              from-[#f04600]
+              to-[#fa8c00]
+              px-4
+              text-xs font-semibold
+              text-white
+              shadow-lg
+              shadow-orange-500/20
+              transition-all duration-200
+              hover:from-[#d93d00]
+              hover:to-[#e67d00]
+              hover:shadow-orange-500/40
+              active:scale-95
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+              disabled:shadow-none
+            "
           >
-            {/* Shimmer overlay */}
-            <div className="absolute inset-0 -translate-x-full group-hover/run:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+            {/* Shimmer */}
+            <div
+              className="
+                pointer-events-none
+                absolute inset-0
+                -translate-x-full
+                bg-gradient-to-r
+                from-transparent
+                via-white/15
+                to-transparent
+                transition-transform duration-700
+                group-hover/run:translate-x-full
+              "
+            />
 
-            <span className="relative z-10 flex items-center">
+            <span
+              className="
+                relative z-10
+                flex items-center
+              "
+            >
               {isRunning ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  <span>Running</span>
+                  <Loader2
+                    className="
+                      mr-1.5
+                      h-3.5 w-3.5
+                      animate-spin
+                    "
+                  />
+                  Running
                 </>
               ) : (
                 <>
-                  <Play className="w-3.5 h-3.5 mr-1.5 fill-white transition-transform duration-200 group-hover/run:scale-110" />
-                  <span>Run</span>
+                  <Play
+                    className="
+                      mr-1.5
+                      h-3.5 w-3.5
+                      fill-white
+                      transition-transform duration-200
+                      group-hover/run:scale-110
+                    "
+                  />
+                  Run
                 </>
               )}
             </span>
 
-            {/* Pulse ring when idle */}
-            {!isRunning && (
-              <span className="absolute inset-0 rounded-md opacity-0 group-hover/run:opacity-100 transition-opacity duration-300">
-                <span className="absolute inset-0 rounded-md animate-ping bg-orange-500/20" />
+            {/* Hover pulse */}
+            {!isRunning && editorReady && (
+              <span
+                className="
+                  pointer-events-none
+                  absolute inset-0
+                  rounded-md
+                  opacity-0
+                  transition-opacity duration-300
+                  group-hover/run:opacity-100
+                "
+              >
+                <span
+                  className="
+                    absolute inset-0
+                    animate-ping
+                    rounded-md
+                    bg-orange-500/20
+                  "
+                />
               </span>
             )}
           </Button>
         </div>
       </div>
 
-      {/* ═══════ Editor Body ═══════ */}
-      <div className="flex-1 min-h-0 relative">
-        {/* Loading Skeleton */}
+      {/* =========================================================
+          EDITOR
+      ========================================================= */}
+
+      <div
+        className="
+          relative
+          min-h-0
+          flex-1
+          w-full
+        "
+      >
+        {/* Loading overlay */}
         <div
           className={`
-            absolute inset-0 bg-[#0f0f0f] z-10 flex flex-col gap-2 p-6
+            absolute inset-0 z-10
+            flex flex-col gap-2
+            bg-[#0f0f0f]
+            p-6
             transition-opacity duration-500
-            ${editorReady ? "opacity-0 pointer-events-none" : "opacity-100"}
+            ${
+              editorReady
+                ? "pointer-events-none opacity-0"
+                : "opacity-100"
+            }
           `}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <Zap className="w-5 h-5 text-[#fa8c00] animate-pulse" />
-            <span className="text-sm text-[#52525b] animate-pulse">Loading editor...</span>
+          <div className="mb-4 flex items-center gap-3">
+            <Zap
+              className="
+                h-5 w-5
+                animate-pulse
+                text-[#fa8c00]
+              "
+            />
+
+            <span
+              className="
+                animate-pulse
+                text-sm
+                text-[#52525b]
+              "
+            >
+              Loading editor...
+            </span>
           </div>
-          {Array.from({ length: 12 }).map((_, i) => (
+
+          {/* Deterministic skeleton widths */}
+          {[
+            82,
+            68,
+            91,
+            57,
+            76,
+            64,
+            88,
+            72,
+            94,
+            61,
+            79,
+            70,
+          ].map((width, index) => (
             <div
-              key={i}
-              className="h-4 rounded bg-[#1a1a1a] animate-pulse"
+              key={index}
+              className="
+                h-4
+                animate-pulse
+                rounded
+                bg-[#1a1a1a]
+              "
               style={{
-                width: `${60 + Math.random() * 35}%`,
-                animationDelay: `${i * 80}ms`,
+                width: `${width}%`,
+                animationDelay: `${index * 80}ms`,
                 animationDuration: "1.5s",
               }}
             />
@@ -258,31 +501,63 @@ export default function EditorPanel({
 
         <Editor
           height="100%"
-          language={language}
+          width="100%"
+          language={normalizedLanguage}
           value={value}
           theme="vs-dark"
           onChange={onChange}
           onMount={handleEditorDidMount}
           options={{
-            minimap: { enabled: true, scale: 1 },
+            minimap: {
+              enabled: true,
+              scale: 1,
+            },
+
             fontSize: 14,
+
             fontFamily:
               "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+
             lineNumbers: "on",
+
             roundedSelection: false,
+
             scrollBeyondLastLine: false,
+
             automaticLayout: true,
-            padding: { top: 16, bottom: 16 },
+
+            padding: {
+              top: 16,
+              bottom: 16,
+            },
+
             folding: true,
+
             renderLineHighlight: "all",
+
             matchBrackets: "always",
+
             tabSize: 2,
+
+            insertSpaces: true,
+
             wordWrap: "on",
-            bracketPairColorization: { enabled: true },
-            guides: { bracketPairs: true, indentation: true },
+
+            bracketPairColorization: {
+              enabled: true,
+            },
+
+            guides: {
+              bracketPairs: true,
+              indentation: true,
+            },
+
             cursorBlinking: "smooth",
+
             cursorSmoothCaretAnimation: "on",
+
             smoothScrolling: true,
+
             scrollbar: {
               useShadows: false,
               verticalHasArrows: false,
@@ -292,42 +567,114 @@ export default function EditorPanel({
               verticalScrollbarSize: 10,
               horizontalScrollbarSize: 10,
             },
+
+            suggest: {
+              showMethods: true,
+              showFunctions: true,
+              showConstructors: true,
+              showDeprecated: true,
+            },
+
+            quickSuggestions: true,
+
+            parameterHints: {
+              enabled: true,
+            },
           }}
           loading={
-            <div className="h-full bg-[#0f0f0f] flex items-center justify-center">
+            <div
+              className="
+                flex h-full
+                items-center justify-center
+                bg-[#0f0f0f]
+              "
+            >
               <div className="flex items-center gap-3">
-                <div className="w-5 h-5 border-2 border-[#fa8c00]/30 border-t-[#fa8c00] rounded-full animate-spin" />
-                <span className="text-sm text-[#52525b]">Initializing...</span>
+                <div
+                  className="
+                    h-5 w-5
+                    animate-spin
+                    rounded-full
+                    border-2
+                    border-[#fa8c00]/30
+                    border-t-[#fa8c00]
+                  "
+                />
+
+                <span
+                  className="
+                    text-sm
+                    text-[#52525b]
+                  "
+                >
+                  Initializing...
+                </span>
               </div>
             </div>
           }
         />
       </div>
 
-      {/* ═══════ Footer Status Bar ═══════ */}
+      {/* =========================================================
+          STATUS BAR
+      ========================================================= */}
+
       <div
         className={`
-          h-6 flex items-center justify-between px-4 
-          border-t border-[#27272a]/60 bg-[#111111]/80
+          flex h-6
+          items-center justify-between
+          border-t border-[#27272a]/60
+          bg-[#111111]/80
+          px-4
           transition-all duration-500
-          ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
-          ${editorReady ? "opacity-100" : "opacity-0"}
+          ${
+            mounted && editorReady
+              ? "translate-y-0 opacity-100"
+              : "translate-y-1 opacity-0"
+          }
         `}
-        style={{ transitionDelay: "300ms" }}
       >
-        <div className="flex items-center gap-3 text-[10px] text-[#52525b] font-mono">
+        {/* Left */}
+        <div
+          className="
+            flex items-center gap-3
+            font-mono text-[10px]
+            text-[#52525b]
+          "
+        >
           <span className="flex items-center gap-1">
             <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: langColor }}
+              className="
+                h-1.5 w-1.5
+                rounded-full
+              "
+              style={{
+                backgroundColor: langColor,
+              }}
             />
-            {language}
+
+            {normalizedLanguage}
           </span>
+
           <span>UTF-8</span>
-          <span>{charCount.toLocaleString()} chars</span>
+
+          <span>
+            {charCount.toLocaleString()} chars
+          </span>
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-[#52525b] font-mono">
-          <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
+
+        {/* Right */}
+        <div
+          className="
+            flex items-center gap-3
+            font-mono text-[10px]
+            text-[#52525b]
+          "
+        >
+          <span>
+            Ln {cursorPos.line}, Col {cursorPos.col}
+          </span>
+
           <span>Spaces: 2</span>
         </div>
       </div>
