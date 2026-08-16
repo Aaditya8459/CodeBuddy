@@ -1,10 +1,45 @@
 import mongoose, { Schema, model, models } from "mongoose";
 
-const UserSchema = new Schema({
-  name: { type: String, required: true },
-  socketId: { type: String, default: 'placeholder' },
-  roomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Room', required: true }, // Links to Room
-  joinedAt: { type: Date, default: Date.now }
-});
+const UserSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-export const User = models.User || model("User", UserSchema);
+    socketId: {
+      type: String,
+      default: "placeholder",
+    },
+
+    roomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Room",
+      required: true,
+    },
+
+    joinedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Prevent duplicate users with the same name
+// from being created in the same room.
+UserSchema.index(
+  {
+    roomId: 1,
+    name: 1,
+  },
+  {
+    unique: true,
+  }
+);
+
+export const User =
+  models.User || model("User", UserSchema);

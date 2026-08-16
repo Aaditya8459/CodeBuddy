@@ -1,10 +1,19 @@
 import express from 'express';
-import { createRoom, joinRoom } from '../controllers/roomController';
+import {
+    createRoom,
+    joinRoom,
+    getRoom
+} from '../controllers/roomController';
 
 const router = express.Router();
 
-// Ensure these point to the correct functions
-router.post('/', createRoom); 
+// Create a new room
+router.post('/', createRoom);
+
+// Join an existing room
 router.post('/join', joinRoom);
+
+// Get/load an existing room by ID
+router.get('/:id', getRoom);
 
 export default router;

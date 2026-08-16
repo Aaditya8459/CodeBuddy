@@ -10,6 +10,7 @@ import { handleSocketEvents } from './socket/socketHandler';
 dotenv.config();
 
 const app = express();
+
 // 1. Create HTTP server to support WebSockets
 const server = http.createServer(app);
 
@@ -18,14 +19,17 @@ const io = new Server(server, {
     cors: {
         origin: "http://localhost:3000",
         methods: ["GET", "POST"],
+        credentials: true,
     }
 });
 
 // Middlewares
 app.use(express.json());
+
 app.use(cors({
     origin: "http://localhost:3000",
     methods: ["GET", "POST"],
+    credentials: true,
 }));
 
 // Debugger Middleware
@@ -48,9 +52,9 @@ app.get('/', (req, res) => {
 const startServer = async () => {
     try {
         await connectToDatabase();
-        
+
         const PORT = process.env.PORT || 5000;
-        
+
         // Use server.listen instead of app.listen
         server.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);

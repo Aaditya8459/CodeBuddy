@@ -12,6 +12,7 @@
     "dockerode": "^4.0.2",
     "dotenv": "^16.4.5",
     "express": "^4.22.2",
+    "mongoose": "^9.9.2",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
