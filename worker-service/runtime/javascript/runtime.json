@@ -1,0 +1,28 @@
+{
+  "id": "javascript",
+  "name": "JavaScript",
+  "version": "node",
+  "extensions": [
+    ".js",
+    ".mjs",
+    ".cjs"
+  ],
+  "entrypoints": [
+    "index.js",
+    "main.js",
+    "app.js"
+  ],
+  "compile": null,
+  "run": {
+    "command": [
+      "node",
+      "{file}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "node"
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "java",
+  "name": "Java",
+  "version": "17",
+  "extensions": [
+    ".java"
+  ],
+  "entrypoints": [
+    "Main.java"
+  ],
+  "compile": {
+    "command": [
+      "javac",
+      "-d",
+      "{outputDir}",
+      "{file}"
+    ]
+  },
+  "run": {
+    "command": [
+      "java",
+      "-cp",
+      "{outputDir}",
+      "{mainClass}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "java",
+      "javac"
+    ]
+  }
+}

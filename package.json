@@ -1,0 +1,21 @@
+{
+  "name": "cloud-ide-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "client",
+    "server",
+    "worker-service"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w client\" \"npm run dev -w server\"",
+    "install:all": "npm install",
+    "build": "npm run build -w client && npm run build -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
+  }
+}

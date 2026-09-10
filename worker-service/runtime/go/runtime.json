@@ -1,0 +1,31 @@
+{
+  "id": "go",
+  "name": "Go",
+  "version": "latest",
+  "extensions": [
+    ".go"
+  ],
+  "entrypoints": [
+    "main.go"
+  ],
+  "compile": {
+    "command": [
+      "go",
+      "build",
+      "-o",
+      "{outputFile}",
+      "{file}"
+    ]
+  },
+  "run": {
+    "command": [
+      "{outputFile}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "go"
+    ]
+  }
+}

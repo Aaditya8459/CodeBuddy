@@ -1,0 +1,31 @@
+{
+  "id": "c",
+  "name": "C",
+  "version": "gcc",
+  "extensions": [
+    ".c"
+  ],
+  "entrypoints": [
+    "main.c"
+  ],
+  "compile": {
+    "command": [
+      "gcc",
+      "{file}",
+      "-O2",
+      "-o",
+      "{outputFile}"
+    ]
+  },
+  "run": {
+    "command": [
+      "{outputFile}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "gcc"
+    ]
+  }
+}

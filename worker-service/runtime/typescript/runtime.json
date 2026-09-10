@@ -1,0 +1,40 @@
+{
+  "id": "typescript",
+  "name": "TypeScript",
+  "version": "latest",
+  "extensions": [
+    ".ts",
+    ".mts",
+    ".cts"
+  ],
+  "entrypoints": [
+    "index.ts",
+    "main.ts",
+    "app.ts"
+  ],
+  "compile": {
+    "command": [
+      "tsc",
+      "{file}",
+      "--outDir",
+      "{outputDir}",
+      "--target",
+      "ES2022",
+      "--module",
+      "CommonJS"
+    ]
+  },
+  "run": {
+    "command": [
+      "node",
+      "{outputFile}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "node",
+      "tsc"
+    ]
+  }
+}

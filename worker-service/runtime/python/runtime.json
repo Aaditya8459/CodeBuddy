@@ -1,0 +1,26 @@
+{
+  "id": "python",
+  "name": "Python",
+  "version": "3",
+  "extensions": [
+    ".py"
+  ],
+  "entrypoints": [
+    "main.py",
+    "app.py",
+    "program.py"
+  ],
+  "compile": null,
+  "run": {
+    "command": [
+      "python3",
+      "{file}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "python3"
+    ]
+  }
+}

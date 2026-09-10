@@ -1,0 +1,31 @@
+{
+  "id": "rust",
+  "name": "Rust",
+  "version": "latest",
+  "extensions": [
+    ".rs"
+  ],
+  "entrypoints": [
+    "main.rs"
+  ],
+  "compile": {
+    "command": [
+      "rustc",
+      "{file}",
+      "-O",
+      "-o",
+      "{outputFile}"
+    ]
+  },
+  "run": {
+    "command": [
+      "{outputFile}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "rustc"
+    ]
+  }
+}

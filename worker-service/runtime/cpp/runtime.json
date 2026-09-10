@@ -1,0 +1,35 @@
+{
+  "id": "cpp",
+  "name": "C++",
+  "version": "g++",
+  "extensions": [
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".hpp"
+  ],
+  "entrypoints": [
+    "main.cpp"
+  ],
+  "compile": {
+    "command": [
+      "g++",
+      "{file}",
+      "-std=c++17",
+      "-O2",
+      "-o",
+      "{outputFile}"
+    ]
+  },
+  "run": {
+    "command": [
+      "{outputFile}"
+    ]
+  },
+  "interactive": true,
+  "requirements": {
+    "executables": [
+      "g++"
+    ]
+  }
+}
